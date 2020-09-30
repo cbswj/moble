@@ -1,0 +1,91 @@
+
+import boto3
+from keras.models import load_model
+import numpy as np
+
+ACCESS_KEY = 'AKIA5PJP5IRPYXVGWWWS'
+SECRET_KEY = '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'
+
+cabbage_rice_bean_mean = [1.2864085e+01, 8.8854485e+00, 1.7576004e+01, 3.5702879e+00, 5.6950386e+03]
+cabbage_rice_bean_mean = np.array(cabbage_rice_bean_mean , dtype = np.float32)
+cabbage_rice_bean_std = [  10.953421,   11.074412,   11.133771,   13.865681, 1331.5559  ]
+cabbage_rice_bean_std = np.array(cabbage_rice_bean_std, dtype = np.float32)
+
+redPepper_mean = [1.2943558e+01, 9.0609913e+00, 1.7511837e+01, 3.6608555e+00, 4.9447109e+03]
+redPepper_mean = np.array(redPepper_mean , dtype = np.float32)
+redPepper_std = [  10.653638,   10.753399,   10.847842,   14.521497, 1529.4465  ]
+redPepper_std = np.array(redPepper_std, dtype = np.float32)
+
+strawberry_mean = [6.17716408e+00, 2.09759617e+00, 1.09147835e+01, 1.38239181e+00, 4.86931494e+03]
+strawberry_mean = np.array(strawberry_mean , dtype = np.float32)
+strawberry_std = [   8.570902,    8.279434,    9.172064,    5.009792, 1546.5586  ]
+strawberry_std = np.array(strawberry_std, dtype = np.float32)
+
+
+def lambda_handler(event, context):
+    
+    downloadFromS3('hotsix-smartfarm', 'deep/retail/cabbage_prediction.h5', '/tmp/cabbage_prediction.h5')
+    downloadFromS3('hotsix-smartfarm', 'deep/retail/rice_prediction.h5', '/tmp/rice_prediction.h5')
+    downloadFromS3('hotsix-smartfarm', 'deep/retail/bean_prediction.h5', '/tmp/bean_prediction.h5')
+    downloadFromS3('hotsix-smartfarm', 'deep/retail/redPepper_prediction.h5', '/tmp/redPepper_prediction.h5')
+    downloadFromS3('hotsix-smartfarm', 'deep/retail/strawberry_prediction.h5', '/tmp/strawberry_prediction.h5')
+    
+    weather = [-1.1,	-3.5,	2,	0,	8350]
+    weather = np.array(weather , dtype = np.float32)
+    weather = weather.reshape(-1,5)
+    
+    cabbageX = weather.copy()
+    cabbageX -= cabbage_rice_bean_mean
+    cabbageX /= cabbage_rice_bean_std
+    
+    model = load_model('/tmp/cabbage_prediction.h5')
+    prediction = model.predict(cabbageX)
+    result = str(prediction[0][0]) + ', '
+    
+    riceX = weather.copy()
+    riceX -= cabbage_rice_bean_mean
+    riceX /= cabbage_rice_bean_std
+    
+    model = load_model('/tmp/rice_prediction.h5')
+    prediction = model.predict(riceX)
+    result += str(prediction[0][0]) + ', '
+    
+    beanX = weather.copy()
+    beanX -= cabbage_rice_bean_mean
+    beanX /= cabbage_rice_bean_std
+    
+    model = load_model('/tmp/bean_prediction.h5')
+    prediction = model.predict(beanX)
+    result += str(prediction[0][0]) + ', '
+    
+    redPepperX = weather.copy()
+    redPepperX -= redPepper_mean
+    redPepperX /= redPepper_std
+    
+    model = load_model('/tmp/redPepper_prediction.h5')
+    prediction = model.predict(redPepperX)
+    result += str(prediction[0][0]) + ', '
+    
+    strawberryX = weather.copy()
+    strawberryX -= strawberry_mean
+    strawberryX /= strawberry_std
+    
+    model = load_model('/tmp/strawberry_prediction.h5')
+    prediction = model.predict(strawberryX)
+    result += str(prediction[0][0])
+    
+    # TODO implement
+    return {
+        'statusCode': 200,
+        'body': result
+    }
+    
+def downloadFromS3(strBucket, s3_path, local_path):
+    s3_client = boto3.client(
+        's3',
+        aws_access_key_id=ACCESS_KEY,
+        aws_secret_access_key = SECRET_KEY,
+    )
+    
+    s3_client.download_file(strBucket, s3_path, local_path)
+
