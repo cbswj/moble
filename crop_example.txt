@@ -30,8 +30,12 @@ def lambda_handler(event, context):
     downloadFromS3('hotsix-smartfarm', 'deep/retail/redPepper_prediction.h5', '/tmp/redPepper_prediction.h5')
     downloadFromS3('hotsix-smartfarm', 'deep/retail/strawberry_prediction.h5', '/tmp/strawberry_prediction.h5')
     
-    weather = [-1.1,	-3.5,	2,	0,	8350]
-    weather = np.array(weather , dtype = np.float32)
+    weather_rain = event['imgName']
+    
+    dayWeather = dataPreprocessing(weather_rain)
+    
+    
+    dayWeather = np.array(dayWeather , dtype = np.float32)
     weather = weather.reshape(-1,5)
     
     cabbageX = weather.copy()
@@ -79,6 +83,41 @@ def lambda_handler(event, context):
         'statusCode': 200,
         'body': result
     }
+    
+    
+def dataPreprocessing(weather_rain):
+    weather_rain = weather_rain.split('/')
+    
+    weather = weather_rain[0].strip()
+    weather = weather.replace(' ','')
+    weather = weather.split('°C')
+    weather.pop()
+    
+    rain = weather_rain[1].split(' ')
+    avgTemp = []
+    maxTemp = []
+    minTemp = []
+    
+    if len(weather) == 13:
+        maxTemp.append(weather[0])
+        minTemp.append(weather[0])
+        avgTemp.append(weather[0])
+        start=1
+    else:
+        start=0
+    
+    for i in range(start, len(weather)-1,2):    
+        maxTemp.append(weather[i])
+        minTemp.append(weather[i+1])
+        avgTemp.append( (float(weather[i]) + float(weather[i+1]))/2.0 )
+    
+
+    day = []
+    for i in range(0,7):
+        day.append([avgTemp[i], minTemp[i], maxTemp[i], rain[i], 8590])
+        
+    return day    
+    
     
 def downloadFromS3(strBucket, s3_path, local_path):
     s3_client = boto3.client(
