@@ -34,54 +34,54 @@ def lambda_handler(event, context):
     
     dayWeather = dataPreprocessing(weather_rain)
     
-    
     dayWeather = np.array(dayWeather , dtype = np.float32)
-    weather = weather.reshape(-1,5)
     
-    cabbageX = weather.copy()
-    cabbageX -= cabbage_rice_bean_mean
-    cabbageX /= cabbage_rice_bean_std
+    cabbage_rice_beanX = dayWeather.copy()
+    cabbage_rice_beanX -= cabbage_rice_bean_mean
+    cabbage_rice_beanX /= cabbage_rice_bean_std
     
+    #cabbage
     model = load_model('/tmp/cabbage_prediction.h5')
-    prediction = model.predict(cabbageX)
-    result = str(prediction[0][0]) + ', '
+    prediction = model.predict(cabbage_rice_beanX)
+    cabbage_result = str(prediction[0][0]) + ',' + str(prediction[1][0]) + ',' + str(prediction[2][0]) + ',' + str(prediction[3][0]) + ','+ str(prediction[4][0]) + ','+ str(prediction[5][0]) + ','+ str(prediction[6][0])
     
-    riceX = weather.copy()
-    riceX -= cabbage_rice_bean_mean
-    riceX /= cabbage_rice_bean_std
-    
+    #rice
     model = load_model('/tmp/rice_prediction.h5')
-    prediction = model.predict(riceX)
-    result += str(prediction[0][0]) + ', '
+    prediction = model.predict(cabbage_rice_beanX)
+    rice_result = str(prediction[0][0]) + ',' + str(prediction[1][0]) + ',' + str(prediction[2][0]) + ',' + str(prediction[3][0]) + ','+ str(prediction[4][0]) + ','+ str(prediction[5][0]) + ','+ str(prediction[6][0])
     
-    beanX = weather.copy()
-    beanX -= cabbage_rice_bean_mean
-    beanX /= cabbage_rice_bean_std
-    
+    #bean
     model = load_model('/tmp/bean_prediction.h5')
-    prediction = model.predict(beanX)
-    result += str(prediction[0][0]) + ', '
+    prediction = model.predict(cabbage_rice_beanX)
+    bean_result = str(prediction[0][0]) + ',' + str(prediction[1][0]) + ',' + str(prediction[2][0]) + ',' + str(prediction[3][0]) + ','+ str(prediction[4][0]) + ','+ str(prediction[5][0]) + ','+ str(prediction[6][0])
     
-    redPepperX = weather.copy()
+    #redPepper
+    redPepperX = dayWeather.copy()
     redPepperX -= redPepper_mean
     redPepperX /= redPepper_std
     
     model = load_model('/tmp/redPepper_prediction.h5')
     prediction = model.predict(redPepperX)
-    result += str(prediction[0][0]) + ', '
+    redPepper_result = str(prediction[0][0]) + ',' + str(prediction[1][0]) + ',' + str(prediction[2][0]) + ',' + str(prediction[3][0]) + ','+ str(prediction[4][0]) + ','+ str(prediction[5][0]) + ','+ str(prediction[6][0])
     
-    strawberryX = weather.copy()
+    #strawberry
+    strawberryX = dayWeather.copy()
     strawberryX -= strawberry_mean
     strawberryX /= strawberry_std
     
     model = load_model('/tmp/strawberry_prediction.h5')
     prediction = model.predict(strawberryX)
-    result += str(prediction[0][0])
+    strawberry_result = str(prediction[0][0]) + ',' + str(prediction[1][0]) + ',' + str(prediction[2][0]) + ',' + str(prediction[3][0]) + ','+ str(prediction[4][0]) + ','+ str(prediction[5][0]) + ','+ str(prediction[6][0])
+
     
     # TODO implement
     return {
         'statusCode': 200,
-        'body': result
+        'cabbage_result': cabbage_result,
+        'rice_result': rice_result,
+        'bean_result': bean_result,
+        'redPepper_result': redPepper_result,
+        'strawberry_result': strawberry_result
     }
     
     
@@ -90,7 +90,7 @@ def dataPreprocessing(weather_rain):
     
     weather = weather_rain[0].strip()
     weather = weather.replace(' ','')
-    weather = weather.split('°C')
+    weather = weather.split('%')
     weather.pop()
     
     rain = weather_rain[1].split(' ')
