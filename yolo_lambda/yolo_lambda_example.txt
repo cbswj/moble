@@ -1,0 +1,121 @@
+import json
+import cv2
+import boto3
+import numpy as np
+
+BUCKET_NAME = 'hotsix-smartfarm'
+ACCESS_KEY = 'AKIA5PJP5IRPYXVGWWWS'
+SECRET_KEY = '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'
+condition = ['person', 'cat', 'dog', 'horse', 'sheep', 'cow', 'bear', 'mouse']
+
+
+def lambda_handler(event, context):
+    
+    file_name = event['imgName']
+    
+    downloadFromS3(BUCKET_NAME, 'yolo/yolov3.weights', '/tmp/' + 'yolov3.weights')
+    downloadFromS3(BUCKET_NAME, 'image_yolo/image/'+file_name, '/tmp/'+file_name)
+    
+
+    YOLO_net = cv2.dnn.readNet("/tmp/yolov3.weights", "cfg/yolov3.cfg")
+
+    classes = []
+    with open("cfg/coco.names", "r") as f:
+        classes = [line.strip() for line in f.readlines()]
+
+    layer_names = YOLO_net.getLayerNames()
+    output_layers = [layer_names[i[0] - 1] for i in YOLO_net.getUnconnectedOutLayers()]
+
+    colors = np.random.uniform(0, 255, size=(len(classes), 3))
+
+    frame = cv2.imread('/tmp/'+file_name)
+    h, w, c = frame.shape
+
+    blob = cv2.dnn.blobFromImage(frame, 0.00392, (224, 224), (0, 0, 0), True, crop=False)
+
+    YOLO_net.setInput(blob)
+
+    outs = YOLO_net.forward(output_layers)
+
+    class_ids = []
+    confidences = []
+    boxes = []
+
+    for out in outs:
+        for detection in out:
+
+            scores = detection[5:]
+            class_id = np.argmax(scores)
+            confidence = scores[class_id]
+
+            if confidence > 0.5:
+                # 탐지된 객체의 너비, 높이 및 중앙 좌표값 찾기
+                center_x = int(detection[0] * w)
+                center_y = int(detection[1] * h)
+                dw = int(detection[2] * w)
+                dh = int(detection[3] * h)
+
+                # 객체의 사각형 테두리 중 좌상단 좌표값 찾기
+                x = int(center_x - dw / 2)
+                y = int(center_y - dh / 2)
+
+                boxes.append([x, y, dw, dh])
+                confidences.append(float(confidence))
+                class_ids.append(class_id)
+
+    indexes = cv2.dnn.NMSBoxes(boxes, confidences, 0.45, 0.4)
+
+    result_list = []
+
+    for i in range(len(boxes)):
+        if i in indexes:
+            label = str(classes[class_ids[i]])
+            if label not in condition:
+                continue
+            x, y, w, h = boxes[i]
+            print(label)
+            result_list.append(label)
+            score = confidences[i]
+            color = colors[i]
+
+            # 사각형 테두리 그리기 및 텍스트 쓰기
+            cv2.rectangle(frame, (x, y), (x + w, y + h), color, 5)
+            cv2.putText(frame, label, (x, y - 20), cv2.FONT_ITALIC, 1,
+                        color, 2)
+
+    result_list = list(set(result_list))
+    result = ''
+
+    for i in range(0, len(result_list)):
+        if i == len(result_list)-1:
+            result += result_list[i]
+            break
+        result += result_list[i] + ','
+
+    cv2.imwrite('/tmp/'+file_name, frame)
+
+    uploadToS3(BUCKET_NAME, 'image_yolo/detect/'+file_name, '/tmp/'+file_name)
+
+    return {
+        'statusCode': 200,
+        'body': result
+    }
+
+
+def downloadFromS3(strBucket, s3_path, local_path):
+    s3_client = boto3.client(
+        's3',
+        aws_access_key_id=ACCESS_KEY,
+        aws_secret_access_key=SECRET_KEY,
+    )
+
+    s3_client.download_file(strBucket, s3_path, local_path)
+
+
+def uploadToS3(bucket, s3_path, local_path):
+    s3_client = boto3.client(
+        's3',
+        aws_access_key_id=ACCESS_KEY,
+        aws_secret_access_key=SECRET_KEY,
+    )
+    s3_client.upload_file(local_path, bucket, s3_path)
