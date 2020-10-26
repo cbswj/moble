@@ -1,0 +1,19 @@
+Lambda가 이름이 uploadWav-role-il4xnybu이고
+Amazon CloudWatch Logs에 로그를
+
+
+
+earphone_S3
+AKIA5PJP5IRPYXVGWWWS
+Cxwdq2eOyxGaNOtKIgAAtB5oZ2x8VHCkhOGBlaMM 숨기기
+
+서울지역 : ap-northeast-2
+
+CLI 명령 출력 형식
+--output	Description
+json	JSON 문자열 이 설정은 기본값
+jsonc	색으로 구분된 JSON
+yaml	머신이 읽을 수 있는 JSON 대안인 YAML.
+table	열 제목인 키가 포함된 ASCII 테이블
+tsv	키가 포함되지 않은 탭으로 구분된 값
+none	오류와 경고 이외의 출력은 없음
