@@ -1,0 +1,55 @@
+Faster R-CNN(Faster region with convolutional
+neural network) 기반의 객체 탐지 모델을 적용하여 이미지로
+부터 다양한 불꽃들을 감지할 수 있는 기법을 제안하고자 한
+
+
+Adam optimizer와 Nadam optimizer CNN, Faster-RCNN, SSD-MobileNet
+
+Adam
+optimizer와 Nadam optimizer의 Custom-Convolution
+Neural Network (CNN), Faster-RCNN, SSD-Mobile
+Net 이 4가
+
+CNN은 컨볼루션 계층 (convolution layer)과 풀링
+계층(pooling layer or sub-sampling layer) 입력을 필
+터로 합성곱하여 특징을 추출하고 이런 합성곱 레
+이어를 여러 계층으로 연결한다. 합성곱 레이어를
+지날 때 마다 저수준의 이미지 특징들이 점차 고
+수준의 특징들로 만들어진다. 그리고 마지막에는
+완전연결 레이어로 최종 결과를 학습한다.
+
+
+Adam optimizer(Adaptive Moment Estimation)은
+RMSProp과 Momentum방식을 결합한 알고리즘이
+다. 계산해온 기울기의 지수평균을 저장하며, RMS
+Prop과 유사
+
+
+Nadam optimizer(Nesterov-accelerated Adaptive
+Moment Estimation)은 Adam과 NAG를 결합한 알
+고리즘이다. Nadam은 NAG의 철학을 바탕으로 현
+재 위치에서 Gradient 값을 계산하는 것이 아닌
+Momentum 방향으로 이동한 뒤, 새로운 위치에서
+Gradient 값을 계산해내게 된다[4].
+
+3 Faster-RCNN
+Fast-RCNN에서 가장 큰 계산부하를 차지하는
+region proposal 생성을 새로운 방식으로 대체하고,
+이를 모델 내부로 통합시키는 것이다. 이에 고안된
+것이 바로 Fast-RCNN에서 RPN(Region Proposal
+Networks)를 통합한 Faster-RCNN이다[5].
+
+
+SSD(Single Shot Multibox Detector)
+output을 만드는 공간을 나누고(multi feature
+map) 각 feature map에서 다른 비율과 스케일로
+default box를 생성하고 모델을 통해 계산된 좌표와
+클래스값에 default box를 활용해 최종 bounding
+box를 생성한다[6].
+
+
+데이터 사용
+http://www.image-net.org/search?q=fire
+
+사용법
+https://wingnim.tistory.com/46
